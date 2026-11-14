@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/liveldy/Nous/main/sdk/schema/bundle.schema.json",
+  "type": "object",
+  "required": [
+    "format",
+    "manifest",
+    "files"
+  ],
+  "properties": {
+    "format": {
+      "const": "nous.plugin/v1"
+    },
+    "manifest": {
+      "$ref": "https://raw.githubusercontent.com/liveldy/Nous/main/sdk/schema/manifest.schema.json"
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 256,
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

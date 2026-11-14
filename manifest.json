@@ -1,0 +1,60 @@
+{
+  "id": "app.nous.music-player",
+  "name": "音乐播放器",
+  "version": "1.0.0",
+  "api": "1.3",
+  "requiresHost": "1.2.0",
+  "author": {
+    "name": "Nelson",
+    "url": "https://github.com/liveldy"
+  },
+  "description": "古风歌曲包的逐句歌词播放器：本地音频解码播放，顺序、单曲、随机三种模式。",
+  "platforms": [
+    "web",
+    "windows-x64",
+    "android-arm64"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "entry": "ui/index.html",
+  "repository": "liveldy/Nous-Plugin-Music-Player",
+  "license": "MIT",
+  "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNWFiOWZjIiBzdHJva2Utd2lkdGg9IjEuNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48cGF0aCBkPSJNNCA3aDE2TTQgMTdoMTYiIG9wYWNpdHk9Ii40Ii8+PHBhdGggZD0iTTQgMTJjMi42IDAgMi42LTMgNS4yLTMgczIuNiAzIDUuMiAzIDIuNi0zIDUuNi0zIi8+PC9zdmc+",
+  "navigation": [
+    {
+      "id": "player",
+      "label": "播放",
+      "icon": "home"
+    }
+  ],
+  "defaultView": "player",
+  "requiredMethods": [
+    "storage.get",
+    "storage.set"
+  ],
+  "optionalMethods": [],
+  "resources": [
+    "ui/index.html",
+    "ui/style.css",
+    "ui/app.js",
+    "ui/pack.js",
+    "ui/nous-plugin.js",
+    "ui/fonts/mona-sans-latin.woff2",
+    "ui/fonts/geist-mono-latin.woff2",
+    "ui/fonts/OFL-mona-sans.txt",
+    "ui/fonts/OFL-geist-mono.txt"
+  ],
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "publishedAt": "2026-11-14",
+      "changes": [
+        "古风歌曲包的 22 首曲目、逐句歌词随包：曲目表由 tools/pack.mjs 从破晓的音乐内容生成。",
+        "用 Web Audio 解码本地音频播放；宿主页面 CSP 禁止 <audio> 与网络，音频只从本机选取的文件读入内存。",
+        "顺序、单曲、随机三种播放模式，进度拖动、音量、歌词点句跳转，与弦音余韵的听感一致。",
+        "播放位置、音量、模式与今日听曲时长写入插件存储，按账户隔离；重新打开后接着上一首暂停的位置。"
+      ]
+    }
+  ]
+}

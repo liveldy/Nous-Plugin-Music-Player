@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/liveldy/Nous/main/sdk/schema/result.schema.json",
+  "type": "object",
+  "required": [
+    "protocol",
+    "kind",
+    "nonce",
+    "id"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "nous.plugin/1"
+    },
+    "kind": {
+      "const": "result"
+    },
+    "nonce": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "value": {},
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "E_INVALID_PARAMS",
+            "E_METHOD_NOT_FOUND",
+            "E_PERMISSION_DENIED",
+            "E_PLATFORM_UNSUPPORTED",
+            "E_HOST_TOO_OLD",
+            "E_PLUGIN_DISABLED",
+            "E_CANCELLED",
+            "E_TIMEOUT",
+            "E_BUSY",
+            "E_TOO_LARGE",
+            "E_RUNTIME",
+            "E_AUTH_DENIED",
+            "E_AUTH_EXPIRED",
+            "E_DEVELOPMENT_DISABLED",
+            "E_HOST"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "value"
+      ],
+      "not": {
+        "required": [
+          "error"
+        ]
+      }
+    },
+    {
+      "required": [
+        "error"
+      ],
+      "not": {
+        "required": [
+          "value"
+        ]
+      }
+    }
+  ],
+  "additionalProperties": false
+}

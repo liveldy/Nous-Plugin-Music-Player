@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+// MIT. Pin one built platform module in a release manifest.
+import fs from 'node:fs/promises';import path from 'node:path';import {digest} from './project.mjs';import {githubURL} from './protocol.mjs';
+const [root='.',platform,file,url]=process.argv.slice(2);if(!platform||!file||!url)throw Error('Usage: node sdk/module.mjs project platform file.module.zip https://github.com/owner/repo/releases/download/tag/name.module.zip');const p=path.resolve(root,'manifest.json'),m=JSON.parse(await fs.readFile(p,'utf8'));if(!m.runtime?.[platform])throw Error('Platform absent from manifest');githubURL(url,m.repository);const raw=await fs.readFile(file);m.runtime[platform].asset={url,sha256:digest(raw),bytes:raw.length};await fs.writeFile(p,JSON.stringify(m,null,2)+'\n');console.log('Pinned '+platform+' module '+m.runtime[platform].asset.sha256);

@@ -1,0 +1,71 @@
+{
+  "id": "org.example.text.dev",
+  "name": "文本检视",
+  "version": "1.0.0",
+  "api": "1.3",
+  "requiresHost": "1.2.0",
+  "description": "公开SDK独立原生示例：统计文本并计算SHA-256。",
+  "platforms": [
+    "windows-x64",
+    "android-arm64"
+  ],
+  "permissions": [
+    "native.runtime"
+  ],
+  "entry": "ui/index.html",
+  "repository": "example-org/nous-text",
+  "license": "MIT",
+  "navigation": [
+    {
+      "id": "inspect",
+      "label": "文本检视",
+      "icon": "file-text"
+    }
+  ],
+  "defaultView": "inspect",
+  "requiredMethods": [
+    "runtime.start",
+    "runtime.invoke",
+    "runtime.stop"
+  ],
+  "resources": [
+    "ui/index.html",
+    "ui/style.css",
+    "ui/app.js",
+    "ui/nous-plugin.js"
+  ],
+  "runtime": {
+    "windows-x64": {
+      "type": "jvm",
+      "entry": "org.example.text.PluginMain",
+      "mainJar": "app/plugin.jar",
+      "asset": {
+        "url": "https://github.com/example-org/nous-text/releases/download/v1.0.0/windows.module.zip",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 1
+      }
+    },
+    "android-arm64": {
+      "type": "android-dex",
+      "entry": "org.example.text.AndroidPlugin",
+      "minSdk": 30,
+      "asset": {
+        "url": "https://github.com/example-org/nous-text/releases/download/v1.0.0/android.module.zip",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 1
+      }
+    }
+  },
+  "author": {
+    "name": "Example Developer"
+  },
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "publishedAt": "2026-11-14",
+      "changes": [
+        "独立公开SDK示例；发布前替换作者、仓库与更新说明。"
+      ]
+    }
+  ]
+}

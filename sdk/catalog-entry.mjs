@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+// MIT. Generate information for in-app marketplace submission; never asks developers for a signing key.
+import fs from 'node:fs/promises';import path from 'node:path';import {validateBundle,githubURL} from './protocol.mjs';import {digest} from './project.mjs';
+const [file,url,out='plugin-submission.json']=process.argv.slice(2);if(!file||!url)throw Error('Usage: node sdk/catalog-entry.mjs bundle.nous-plugin.json GitHubReleaseURL [entry.json]');const raw=await fs.readFile(file),b=validateBundle(JSON.parse(raw));githubURL(url,b.manifest.repository);const entry={url,sha256:digest(raw),bytes:raw.length,pluginId:b.manifest.id,version:b.manifest.version};await fs.writeFile(path.resolve(out),JSON.stringify(entry,null,2)+'\n');console.log('Wrote submission information; submit in Nous → 插件管理 → 开发插件 → 提交商城审核: '+path.resolve(out));
