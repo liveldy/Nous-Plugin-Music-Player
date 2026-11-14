@@ -13,12 +13,14 @@ default-src 'none'; script-src 'nonce-…'; style-src 'nonce-…' 'unsafe-inline
 img-src data:; font-src data:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'
 ```
 
+接口对整包资源的上限是 4 MiB（`sdk/protocol.mjs` 的 `validateBundle`：超过就抛「插件界面资源最大 4 MB」），22 首约 200 MB，连一首 9 MB 都放不下；所以音频只能来自你本机。
+
 没有 `media-src`，所以 `<audio>`、`<video>`、blob: 与 data: 音频都被拒绝（实测：`play()` 报 `NotSupportedError`），页面也不能联网。插件包里只有图片与字体会被内联成 data:，音频文件进不了页面，总包也只有 4 MiB。
 
 因此这一版用 **Web Audio** 播：`decodeAudioData(File.arrayBuffer())` 不走 CSP，也不联网；`AudioBufferSourceNode` 出进度与时长，`AnalyserNode` 出这一页中间那根会振动的弦。
 
 - 打开插件看到的是《弦音余韵》古风歌曲包里的 22 首曲目（名称、歌手、时长、逐句 LRC 歌词）。
-- 点「选择本地文件」，或在曲库里点任意一首，选取歌曲包里的 mp3：文件名（`001.mp3`、`弱水三千.mp3`）对上就自动归位。
+- 点「选择歌曲包」选中歌曲包文件夹，22 首一次归位；也可以在曲库里点某一首，单独选它那个文件。文件名（`001.mp3`、`弱水三千.mp3`）对上就自动归位。
 - 文件不离开设备，也不会被写入插件存储；关闭页面后要重新选择一次，这是接口限制，不是遗漏。
 
 ## 页面能力：后台播放、通知栏与托盘
@@ -101,9 +103,9 @@ sdk/                   公开插件 SDK（MIT）
 
 ## 发行
 
-- 仓库：https://github.com/liveldy/Nous-Plugin-Music-Player （私有；`ui/pack.js` 带 22 首歌名与 801 行歌词，属第三方版权文本，确认有权再转公开）
+- 仓库：https://github.com/liveldy/Nous-Plugin-Music-Player 
 - 发行包：https://github.com/liveldy/Nous-Plugin-Music-Player/releases/download/v1.0.0/app.nous.music-player-1.0.0.nous-plugin.json
-- SHA-256：`a6405a95148dea40aa62795b1c30e26bb0dc0b2a799b567094e5534651d8dbb8`（177,250 字节）
+- SHA-256：`e533c3ff025b9aeb277dcd8792c8226ed6f939114fa71753906faf2f1184b62c`（177,807 字节）
 
 ## 许可
 

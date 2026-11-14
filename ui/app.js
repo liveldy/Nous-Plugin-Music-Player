@@ -7,6 +7,7 @@
   const SDK = window.NousPlugin || null;
   const $ = s => document.querySelector(s);
 
+  const inputProto = window.HTMLInputElement ? HTMLInputElement.prototype : {};
   const el = {
     app: $('.app'),
     viz: $('#viz'),
@@ -27,6 +28,7 @@
     status: $('#status'),
     listen: $('#listen'),
     picker: $('#picker'),
+    pickDir: $('#pickDir'),
     pickAll: $('#pickAll'),
   };
 
@@ -284,13 +286,15 @@
       || t.name.toLowerCase() === base);
   }
 
-  el.picker.addEventListener('change', async () => {
-    const chosen = Array.from(el.picker.files || []);
-    const target = el.picker.dataset.for;
-    const playAfter = el.picker.dataset.play === '1';
-    el.picker.value = '';
-    el.picker.dataset.for = '';
-    el.picker.dataset.play = '';
+  el.pickAll.addEventListener('click', () => {
+    const input = el.pickDir && 'webkitdirectory' in inputProto ? el.pickDir : el.picker;
+    input.dataset.for = '';
+    input.dataset.play = '';
+    input.value = '';
+    input.click();
+  });
+
+  async function absorb(chosen, target, playAfter) {
     if (!chosen.length) return;
 
     let first = null;
@@ -310,7 +314,20 @@
       paint();
       play();
     }
-  });
+  }
+
+  for (const input of [el.picker, el.pickDir]) {
+    if (!input) continue;
+    input.addEventListener('change', () => {
+      const chosen = Array.from(input.files || []);
+      const target = input.dataset.for;
+      const playAfter = input.dataset.play === '1';
+      input.value = '';
+      input.dataset.for = '';
+      input.dataset.play = '';
+      absorb(chosen, target, playAfter);
+    });
+  }
 
   /* ------------------------------------------------------------------ */
   /* rendering                                                           */
@@ -630,7 +647,6 @@
   el.prev.addEventListener('click', () => step(-1));
   el.next.addEventListener('click', () => step(1));
   el.modes.forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
-  el.pickAll.addEventListener('click', () => askFile('', false));
 
   el.seek.addEventListener('pointerdown', () => { state.scrubbing = true; });
   el.seek.addEventListener('input', () => {

@@ -80,14 +80,15 @@
       <div class="lib-head">
         <h2>曲库</h2>
         <span class="count" id="count"></span>
-        <button type="button" class="pick" id="pickAll">选择本地文件</button>
+        <button type="button" class="pick" id="pickAll">选择歌曲包</button>
       </div>
       <ol class="tracks" id="tracks"></ol>
-      <p class="foot" id="hint">歌曲音频留在你的本机：选中歌曲包里的 mp3，文件名对上就归位。</p>
+      <p class="foot" id="hint">音频留在本机：选中歌曲包文件夹，整包一次归位。</p>
       <p class="foot foot--status" id="status" role="status"></p>
     </section>
   </main>
 
+<input type="file" id="pickDir" accept=".mp3,.m4a,.flac,.wav,.ogg,audio/*" multiple webkitdirectory hidden>
 <input type="file" id="picker" accept=".mp3,.m4a,.flac,.wav,.ogg,audio/*" multiple hidden>
 <script src="nous-plugin.js"></script>
 <script src="pack.js"></script>
