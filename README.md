@@ -97,7 +97,7 @@ sdk/                   公开插件 SDK（MIT）
 - `node sdk/check.mjs .`：三个平台的协议、权限、必需方法与资源检查通过。
 - 在本机模拟宿主里跑通：读取种子存储恢复曲目/进度/音量/听曲时长，改动写回该账户的存储。
 - 真实 mp3（歌曲包 `001.mp3`、`002.mp3`）解码播放：进度前进、逐句歌词跟着走、上一首/下一首/单曲/随机都对；播放 65 秒后今日听曲时长出现。
-- 设计检查用 taste-skill 的 `copy-lint`、`consistency`、`check`、`perf` 与 `gate`：`copy-lint` 0 FAIL 0 WARN；`perf` 0 FAIL 0 WARN（首屏 108 ms、传输 91.9 KiB、0 个 WebGL 上下文）；`gate` 收在 `GATE: OPEN 21 (rounds used up)`，未过的 21 条全是落地页版式规则（首屏一次只放一个 section、每个 section 恰好一屏、CTA 在 hero 里），这一版是全视口双栏应用界面，不按那套版式排；判定为误报的 5 条写在 `.taste-skill/waivers.json`。
+- 设计检查用 taste-skill 的 `copy-lint`、`consistency`、`check`、`perf` 与 `gate`：`copy-lint` 0 FAIL 0 WARN；`perf` 0 FAIL 0 WARN（首屏 92 ms、传输 91.9 KiB、0 个 WebGL 上下文）；`gate` 收在 `GATE: OPEN 21 (rounds used up)`，未过的 21 条全是落地页版式规则（首屏一次只放一个 section、每个 section 恰好一屏、CTA 在 hero 里），这一版是全视口双栏应用界面，不按那套版式排；判定为误报的 5 条写在 `.taste-skill/waivers.json`。
 
 ## 发行
 
