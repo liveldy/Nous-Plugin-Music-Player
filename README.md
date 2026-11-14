@@ -99,6 +99,12 @@ sdk/                   公开插件 SDK（MIT）
 - 真实 mp3（歌曲包 `001.mp3`、`002.mp3`）解码播放：进度前进、逐句歌词跟着走、上一首/下一首/单曲/随机都对；播放 65 秒后今日听曲时长出现。
 - 设计检查用 taste-skill 的 `copy-lint`、`consistency`、`check`、`perf` 与 `gate`：`copy-lint` 0 FAIL 0 WARN；`perf` 0 FAIL 0 WARN（首屏 108 ms、传输 91.9 KiB、0 个 WebGL 上下文）；`gate` 收在 `GATE: OPEN 21 (rounds used up)`，未过的 21 条全是落地页版式规则（首屏一次只放一个 section、每个 section 恰好一屏、CTA 在 hero 里），这一版是全视口双栏应用界面，不按那套版式排；判定为误报的 5 条写在 `.taste-skill/waivers.json`。
 
+## 发行
+
+- 仓库：https://github.com/liveldy/Nous-Plugin-Music-Player （私有；`ui/pack.js` 带 22 首歌名与 801 行歌词，属第三方版权文本，确认有权再转公开）
+- 发行包：https://github.com/liveldy/Nous-Plugin-Music-Player/releases/download/v1.0.0/app.nous.music-player-1.0.0.nous-plugin.json
+- SHA-256：`a6405a95148dea40aa62795b1c30e26bb0dc0b2a799b567094e5534651d8dbb8`（177,250 字节）
+
 ## 许可
 
 插件代码 MIT。字体为 SIL OFL 1.1（见 `ui/fonts/OFL-*.txt`）。歌曲音频与歌词文本不属于本仓库。
