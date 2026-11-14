@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="page-type" content="software">
 <meta name="site-kind" content="software">
-<title>音乐播放器 · 古风歌曲包</title>
-<meta name="description" content="古风歌曲包的逐句歌词播放器：本地音频解码播放，顺序、单曲、随机三种模式。">
-<meta property="og:title" content="音乐播放器 · 古风歌曲包">
-<meta property="og:description" content="古风歌曲包的逐句歌词播放器：本地音频解码播放，顺序、单曲、随机三种模式。">
+<title>音乐播放器</title>
+<meta name="description" content="本机音频播放器：把文件加进来，顺序、单曲、随机三种模式，进度与音量留在这一页。">
+<meta property="og:title" content="音乐播放器">
+<meta property="og:description" content="本机音频播放器：把文件加进来，顺序、单曲、随机三种模式，进度与音量留在这一页。">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#0a0d14">
@@ -31,17 +31,15 @@
   <main class="stage wrap" id="stage" tabindex="-1">
     <section class="now" aria-label="正在播放">
       <div class="title">
-        <h1 id="title">—</h1>
+        <h1 id="title">还没有音乐</h1>
         <p class="artist" id="artist"></p>
       </div>
-
-      <div class="lyrics" id="lyrics" aria-label="歌词"></div>
 
       <canvas class="viz" id="viz" aria-hidden="true"></canvas>
 
       <div class="controls">
         <div class="seek">
-          <input id="seek" type="range" min="0" max="1" step="0.05" value="0" aria-label="播放进度">
+          <input id="seek" type="range" min="0" max="1" step="0.05" value="0" aria-label="播放进度" disabled>
           <div class="times">
             <time id="elapsed">0:00</time>
             <time id="total">0:00</time>
@@ -56,14 +54,14 @@
           </div>
 
           <div class="buttons">
-            <button type="button" class="ic" id="prev" aria-label="上一首">
+            <button type="button" class="ic" id="prev" aria-label="上一首" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5.6v12.8M15 12 5.5 5.4v13.2z"/></svg>
             </button>
-            <button type="button" class="play" id="play" aria-label="播放">
+            <button type="button" class="play" id="play" aria-label="播放" disabled>
               <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.2v13.6L19 12z"/></svg>
               <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.4h2.6v13.2H9zM13.4 5.4H16v13.2h-2.6z"/></svg>
             </button>
-            <button type="button" class="ic" id="next" aria-label="下一首">
+            <button type="button" class="ic" id="next" aria-label="下一首" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.6v12.8M9 12l9.5-6.6v13.2z"/></svg>
             </button>
           </div>
@@ -80,18 +78,16 @@
       <div class="lib-head">
         <h2>曲库</h2>
         <span class="count" id="count"></span>
-        <button type="button" class="pick" id="pickAll">选择歌曲包</button>
+        <button type="button" class="pick" id="add">添加文件</button>
       </div>
       <ol class="tracks" id="tracks"></ol>
-      <p class="foot" id="hint">音频留在本机：选中歌曲包文件夹，整包一次归位。</p>
+      <p class="foot" id="hint">文件留在本机，不上传；关掉这一页要重新添加。</p>
       <p class="foot foot--status" id="status" role="status"></p>
     </section>
   </main>
 
-<input type="file" id="pickDir" accept=".mp3,.m4a,.flac,.wav,.ogg,audio/*" multiple webkitdirectory hidden>
-<input type="file" id="picker" accept=".mp3,.m4a,.flac,.wav,.ogg,audio/*" multiple hidden>
+<input type="file" id="picker" accept=".mp3,.m4a,.aac,.flac,.wav,.ogg,.oga,.opus,audio/*" multiple hidden>
 <script src="nous-plugin.js"></script>
-<script src="pack.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

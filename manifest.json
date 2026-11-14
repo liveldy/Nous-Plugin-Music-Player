@@ -8,7 +8,7 @@
     "name": "Nelson",
     "url": "https://github.com/liveldy"
   },
-  "description": "古风歌曲包的逐句歌词播放器：本地音频解码播放，顺序、单曲、随机三种模式。",
+  "description": "本机音频播放器：把文件加进来就播，顺序、单曲、随机三种模式，音量与今日听曲时长按账户记住。",
   "platforms": [
     "web",
     "windows-x64",
@@ -38,7 +38,6 @@
     "ui/index.html",
     "ui/style.css",
     "ui/app.js",
-    "ui/pack.js",
     "ui/nous-plugin.js",
     "ui/fonts/mona-sans-latin.woff2",
     "ui/fonts/geist-mono-latin.woff2",
@@ -50,10 +49,10 @@
       "version": "1.0.0",
       "publishedAt": "2026-11-14",
       "changes": [
-        "古风歌曲包的 22 首曲目、逐句歌词随包：曲目表由 tools/pack.mjs 从破晓的音乐内容生成。",
-        "用 Web Audio 解码本地音频播放；宿主页面 CSP 禁止 <audio> 与网络，音频只从本机选取的文件读入内存。",
-        "顺序、单曲、随机三种播放模式，进度拖动、音量、歌词点句跳转，与弦音余韵的听感一致。",
-        "播放位置、音量、模式与今日听曲时长写入插件存储，按账户隔离；重新打开后接着上一首暂停的位置。"
+        "空壳起始：曲库从零开始，点「添加文件」或把文件拖进来，播放器只读本机音频。",
+        "Web Audio 解码播放；宿主页面 CSP 禁止 <audio> 与网络，音频不离开这一页。",
+        "顺序、单曲、随机三种模式，进度拖动、音量、空格与方向键，跟随宿主明暗主题。",
+        "音量、模式与今日听曲时长写入插件存储，按账户隔离。"
       ]
     }
   ]

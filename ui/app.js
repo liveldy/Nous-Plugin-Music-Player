@@ -1,19 +1,16 @@
-/* 音乐播放器 — 页面内播放器：Web Audio 解码本地文件，逐句歌词、三种播放模式。
-   宿主协议没有后台播放、通知栏与托盘接口（见 README「界面能力」），所以播放只发生在这一页。 */
+/* 音乐播放器 — 空壳播放器：曲库从空开始，添加本机音频后用 Web Audio 解码播放。
+   宿主协议没有后台播放、通知栏与托盘接口（见 README「页面能力」），播放只发生在这一页。 */
 (function () {
   'use strict';
 
-  const PACK = window.MUSIC_PACK || {name: '古风歌曲包', tracks: []};
   const SDK = window.NousPlugin || null;
   const $ = s => document.querySelector(s);
 
-  const inputProto = window.HTMLInputElement ? HTMLInputElement.prototype : {};
   const el = {
     app: $('.app'),
     viz: $('#viz'),
     title: $('#title'),
     artist: $('#artist'),
-    lyrics: $('#lyrics'),
     seek: $('#seek'),
     elapsed: $('#elapsed'),
     total: $('#total'),
@@ -28,20 +25,10 @@
     status: $('#status'),
     listen: $('#listen'),
     picker: $('#picker'),
-    pickDir: $('#pickDir'),
-    pickAll: $('#pickAll'),
+    add: $('#add'),
   };
 
-  const tracks = (PACK.tracks || []).map(t => ({
-    id: String(t.id),
-    name: t.name,
-    artist: t.artist || '',
-    duration: Number(t.duration) || 0,
-    file: t.file || '',
-    lyrics: Array.isArray(t.lyrics) ? t.lyrics : [],
-    local: false,
-  }));
-
+  const tracks = [];
   const state = {
     index: 0,
     mode: 'sequence',
@@ -57,7 +44,7 @@
   };
 
   let ctx = null, master = null, analyser = null, node = null, token = 0;
-  let localSeq = 0, lastPos = 0, lastTick = 0, statusTimer = 0, saveTimer = 0;
+  let lastPos = 0, lastTick = 0, statusTimer = 0, saveTimer = 0, seq = 0;
 
   /* ------------------------------------------------------------------ */
   /* helpers                                                             */
@@ -114,7 +101,7 @@
     const bytes = await file.arrayBuffer();
     const decoded = await ctx.decodeAudioData(bytes);
     state.buffers.set(track.id, decoded);
-    if (!track.duration) track.duration = decoded.duration;
+    track.duration = decoded.duration;
     for (const key of Array.from(state.buffers.keys())) {
       if (state.buffers.size <= 2) break;
       if (key !== track.id) state.buffers.delete(key);
@@ -171,16 +158,11 @@
 
   async function play() {
     const track = current();
-    if (!track) return;
-    if (!state.files.has(track.id)) {
-      status(track.name + ' 还没有本地文件，点这一行选取它。');
-      askFile(track.id, true);
-      return;
-    }
+    if (!track) { addFiles(); return; }
     try {
       await start(state.base || 0);
     } catch (error) {
-      status(error && error.message === 'NOSUPPORT' ? '这个环境不提供音频输出。' : '这个文件解不开，换一个 mp3 试试。');
+      status(error && error.message === 'NOSUPPORT' ? '这个环境不提供音频输出。' : '这个文件解不开，换一个试试。');
     }
   }
 
@@ -189,6 +171,7 @@
   }
 
   function seek(seconds) {
+    if (!current()) return;
     const total = duration();
     const target = Math.max(0, Math.min(total || seconds, seconds));
     const wasPlaying = state.playing;
@@ -197,7 +180,7 @@
     state.base = target;
     lastPos = target;
     if (wasPlaying) start(target);
-    else { paint(); updateLyric(); }
+    else paint();
   }
 
   function select(index, autoplay) {
@@ -207,8 +190,6 @@
     state.base = 0;
     state.index = index;
     lastPos = 0;
-    lyricIndex = -1;
-    renderNow();
     paint();
     if (autoplay) play();
     scheduleSave();
@@ -217,26 +198,16 @@
   function step(delta) {
     const n = tracks.length;
     if (!n) return;
-    let next = state.index;
-    for (let i = 0; i < n; i++) {
-      next = (next + delta + n) % n;
-      if (state.files.has(tracks[next].id)) break;
-    }
-    if (next === state.index) { seek(0); return; }
-    select(next, true);
+    const next = (state.index + delta + n) % n;
+    select(next, state.playing);
   }
 
   function onEnded() {
     if (state.mode === 'single') { state.base = 0; start(0); return; }
     const n = tracks.length;
+    if (!n) { paint(); return; }
     if (state.mode === 'sequence' && state.index === n - 1) { state.base = 0; paint(); scheduleSave(); return; }
-    if (!n) return;
-    let next = state.index;
-    for (let i = 0; i < n; i++) {
-      next = state.mode === 'random' ? Math.floor(Math.random() * n) : (next + 1) % n;
-      if (next !== state.index && state.files.has(tracks[next].id)) break;
-    }
-    if (next === state.index || !state.files.has(tracks[next].id)) { state.base = 0; paint(); scheduleSave(); return; }
+    const next = state.mode === 'random' ? Math.floor(Math.random() * n) : (state.index + 1) % n;
     select(next, true);
   }
 
@@ -257,77 +228,109 @@
 
   /* ------------------------------------------------------------------ */
   /* files                                                               */
-  function askFile(id, autoplay) {
-    el.picker.dataset.for = id || '';
-    el.picker.dataset.play = autoplay ? '1' : '';
+  const AUDIO = /\.(mp3|m4a|aac|flac|wav|ogg|oga|opus|webm)$/i;
+
+  function addFiles() {
     el.picker.value = '';
     el.picker.click();
   }
 
-  function localTrack(name) {
-    localSeq += 1;
+  function nameOf(file) {
+    return file.name.replace(/\.[^.]+$/, '') || file.name || '音频';
+  }
+
+  function add(file, playAfter) {
     const track = {
-      id: 'local-' + localSeq + '-' + (name.replace(/[^\w\u4e00-\u9fa5-]+/g, '').slice(0, 16) || 'audio'),
-      name: name,
-      artist: '本地文件',
+      id: 'f' + (++seq),
+      name: nameOf(file),
       duration: 0,
-      lyrics: [],
-      local: true,
     };
     tracks.push(track);
+    state.files.set(track.id, file);
+    if (playAfter) {
+      const wasPlaying = state.playing;
+      state.index = tracks.indexOf(track);
+      state.base = 0;
+      paint();
+      play();
+      if (!wasPlaying) { /* nothing else */ }
+    }
     return track;
   }
 
-  function matchFile(file) {
-    const base = file.name.replace(/\.[^.]+$/, '').toLowerCase();
-    const full = file.name.toLowerCase();
-    return tracks.find(t => t.id.toLowerCase() === base
-      || (t.file && t.file.toLowerCase() === full)
-      || t.name.toLowerCase() === base);
-  }
-
-  el.pickAll.addEventListener('click', () => {
-    const input = el.pickDir && 'webkitdirectory' in inputProto ? el.pickDir : el.picker;
-    input.dataset.for = '';
-    input.dataset.play = '';
-    input.value = '';
-    input.click();
-  });
-
-  async function absorb(chosen, target, playAfter) {
-    if (!chosen.length) return;
-
-    let first = null;
-    for (const file of chosen) {
-      const hit = (target && chosen.length === 1 && tracks.find(t => t.id === target)) || matchFile(file) || localTrack(file.name);
-      state.files.set(hit.id, file);
-      state.buffers.delete(hit.id);
-      if (!first) first = hit;
-    }
+  function absorb(list) {
+    const files = Array.from(list || []).filter(file => file && (AUDIO.test(file.name) || /^audio\//.test(file.type || '')));
+    if (!files.length) { status('这些文件不是音频，换 mp3、m4a、flac 或 wav 试试。'); return; }
+    const firstEmpty = !tracks.length;
+    files.forEach(file => add(file, false));
+    if (firstEmpty) state.index = Math.max(0, tracks.length - files.length);
     renderQueue();
     paint();
-    status('');
-    if (playAfter && first) {
-      state.index = tracks.indexOf(first);
-      state.base = 0;
-      renderNow();
-      paint();
-      play();
-    }
+    status('加进来 ' + files.length + ' 首。');
+    scheduleSave();
   }
 
-  for (const input of [el.picker, el.pickDir]) {
-    if (!input) continue;
-    input.addEventListener('change', () => {
-      const chosen = Array.from(input.files || []);
-      const target = input.dataset.for;
-      const playAfter = input.dataset.play === '1';
-      input.value = '';
-      input.dataset.for = '';
-      input.dataset.play = '';
-      absorb(chosen, target, playAfter);
+  el.picker.addEventListener('change', () => {
+    const chosen = Array.from(el.picker.files || []);
+    el.picker.value = '';
+    if (chosen.length) absorb(chosen);
+  });
+
+  function walk(entry, out) {
+    return new Promise(resolve => {
+      if (!entry) return resolve();
+      if (entry.isFile) {
+        entry.file(file => { out.push(file); resolve(); }, () => resolve());
+        return;
+      }
+      const reader = entry.createReader();
+      const all = [];
+      const read = () => reader.readEntries(batch => {
+        if (!batch.length) {
+          Promise.all(all.map(item => walk(item, out))).then(resolve, resolve);
+          return;
+        }
+        all.push(...batch);
+        read();
+      }, () => resolve());
+      read();
     });
   }
+
+  function absorbDrop(data) {
+    const items = Array.from((data && data.items) || []);
+    const entries = items.map(item => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null)).filter(Boolean);
+    if (entries.length) {
+      const out = [];
+      Promise.all(entries.map(entry => walk(entry, out))).then(() => absorb(out));
+      return;
+    }
+    absorb(data && data.files);
+  }
+
+  let dragDepth = 0;
+  document.addEventListener('dragenter', event => {
+    if (!event.dataTransfer) return;
+    event.preventDefault();
+    dragDepth += 1;
+    el.app.classList.add('is-drop');
+  });
+  document.addEventListener('dragover', event => {
+    if (!event.dataTransfer) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  });
+  document.addEventListener('dragleave', () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (!dragDepth) el.app.classList.remove('is-drop');
+  });
+  document.addEventListener('drop', event => {
+    if (!event.dataTransfer) return;
+    event.preventDefault();
+    dragDepth = 0;
+    el.app.classList.remove('is-drop');
+    absorbDrop(event.dataTransfer);
+  });
 
   /* ------------------------------------------------------------------ */
   /* rendering                                                           */
@@ -339,117 +342,69 @@
       row.className = 'row';
       row.dataset.i = String(index);
       row.innerHTML = '<span class="idx"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="n"></span></span>'
-        + '<span class="meta"><strong></strong><small></small></span>'
+        + '<span class="meta"><strong></strong></span>'
         + '<span class="dur"></span>';
-      const n = row.querySelector('.n');
-      n.textContent = String(index + 1).padStart(2, '0');
+      row.querySelector('.n').textContent = String(index + 1).padStart(2, '0');
       row.querySelector('.meta strong').textContent = track.name;
-      row.querySelector('.meta small').textContent = track.artist;
       row.querySelector('.dur').textContent = track.duration ? clock(track.duration) : '';
       row.addEventListener('click', () => {
-        if (!state.files.has(track.id)) { status('选一个本地文件，对上这一首。'); askFile(track.id, true); return; }
         if (index === state.index) { toggle(); return; }
         select(index, true);
       });
       fragment.append(row);
     });
     el.tracks.textContent = '';
-    el.tracks.append(fragment);
-    el.count.textContent = tracks.length + ' 首';
+    if (!tracks.length) {
+      const empty = document.createElement('button');
+      empty.type = 'button';
+      empty.className = 'empty';
+      empty.id = 'empty';
+      empty.textContent = '添加文件，或拖进来';
+      empty.addEventListener('click', addFiles);
+      el.tracks.append(empty);
+    } else {
+      el.tracks.append(fragment);
+    }
+    el.count.textContent = tracks.length ? tracks.length + ' 首' : '';
     updateQueue();
   }
 
   function updateQueue() {
     Array.from(el.tracks.children).forEach((row, index) => {
       const track = tracks[index];
-      const has = state.files.has(track.id);
+      if (!track || !row.classList.contains('row')) return;
       const now = index === state.index;
       row.classList.toggle('is-now', now);
-      row.classList.toggle('is-missing', !has);
       row.setAttribute('aria-current', now ? 'true' : 'false');
       row.dataset.playing = String(now && state.playing);
       row.querySelector('.dur').textContent = track.duration ? clock(track.duration) : '';
     });
   }
 
-  function renderNow() {
-    const track = current();
-    if (!track) return;
-    el.title.textContent = track.name;
-    el.artist.textContent = track.artist || (track.local ? '本地文件' : '');
-    el.total.textContent = duration() ? clock(duration()) : '—';
-    renderLyrics();
-    updateQueue();
-  }
-
-  function renderLyrics() {
-    const track = current();
-    el.lyrics.textContent = '';
-    const lines = track && track.lyrics ? track.lyrics : [];
-    const host = el.lyrics.parentElement;
-    host.classList.toggle('no-lyrics', !lines.length);
-    if (!lines.length) { el.lyrics.hidden = true; lyricIndex = -1; return; }
-    el.lyrics.hidden = false;
-    const fragment = document.createDocumentFragment();
-    lines.forEach((line, index) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'line';
-      button.dataset.i = String(index);
-      button.textContent = line[1];
-      button.addEventListener('click', () => seek(Number(line[0]) || 0));
-      fragment.append(button);
-    });
-    el.lyrics.append(fragment);
-    el.lyrics.scrollTop = 0;
-    updateLyric(true);
-  }
-
-  let lyricIndex = -1;
-  function updateLyric(force) {
-    const track = current();
-    const lines = track && track.lyrics ? track.lyrics : null;
-    if (!lines || !lines.length) { lyricIndex = -1; return; }
-    const at = position();
-    let active = -1;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i][0] <= at + 0.12) active = i; else break;
-    }
-    if (active === lyricIndex && !force) return;
-    lyricIndex = active;
-    const nodes = el.lyrics.children;
-    for (let i = 0; i < nodes.length; i++) nodes[i].classList.toggle('is-now', i === active);
-    const target = nodes[Math.max(0, active)];
-    if (target) {
-      const box = el.lyrics;
-      box.scrollTop = Math.max(0, target.offsetTop - (box.clientHeight - target.offsetHeight) / 2);
-    }
-  }
-
   function paintTransport() {
-    const total = duration();
-    el.total.textContent = total ? clock(total) : '—';
+    const total = duration() ? duration() : 0;
+    el.total.textContent = total ? clock(total) : '0:00';
     const at = position();
     if (!state.scrubbing) {
       el.seek.max = String(Math.max(total || 1, 1));
-      el.seek.value = String(Math.min(at, total || at || 0));
+      el.seek.value = String(Math.min(at, total || 0));
       el.seek.style.setProperty('--fill', (total ? (at / total) * 100 : 0).toFixed(2) + '%');
     }
     el.elapsed.textContent = clock(at);
     el.play.dataset.playing = String(state.playing);
     el.play.setAttribute('aria-label', state.playing ? '暂停' : '播放');
+    const has = tracks.length > 0;
+    for (const button of [el.play, el.prev, el.next, el.seek]) button.disabled = !has;
+    el.prev.disabled = el.next.disabled = tracks.length < 2;
     updateListen();
   }
 
   function paint() {
     const track = current();
-    if (track) {
-      el.title.textContent = track.name;
-      el.artist.textContent = track.artist || '';
-    }
+    el.title.textContent = track ? track.name : '还没有音乐';
+    el.artist.textContent = track ? '' : '';
     paintTransport();
     updateQueue();
-    updateLyric();
   }
 
   function updateListen() {
@@ -463,7 +418,7 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* visualiser: a string that answers the sound                          */
+  /* visualiser: three strings that answer the sound                      */
   const viz = {ctx: null, w: 0, h: 0, colours: null};
   let vizData = null;
 
@@ -503,7 +458,7 @@
       {dy: spread, scale: 0.58, alpha: 0.38},
     ];
 
-    const live = analyser && vizData;
+    const live = analyser && vizData && state.playing;
     if (live) analyser.getByteTimeDomainData(vizData);
 
     const points = Math.min(420, Math.max(120, Math.round(w / 2)));
@@ -550,7 +505,6 @@
 
     if (!live) return;
 
-    // the middle string carries a body: the lit ribbon under the strongest line
     g.beginPath();
     g.moveTo(0, mid);
     for (let i = 0; i < points; i++) {
@@ -605,11 +559,9 @@
       await host.request('storage.set', {
         key: 'player',
         value: {
-          v: 1,
+          v: 2,
           mode: state.mode,
           volume: Math.round(state.volume * 100) / 100,
-          track: current() ? current().id : '',
-          position: Math.round(position() * 10) / 10,
           listen: {d: state.listen.date, s: Math.round(state.listen.seconds)},
         },
       });
@@ -625,17 +577,10 @@
           if (saved.mode) setMode(saved.mode, false);
           if (typeof saved.volume === 'number') setVolume(saved.volume, false);
           if (saved.listen && saved.listen.d === day()) state.listen.seconds = Number(saved.listen.s) || 0;
-          const at = tracks.findIndex(t => t.id === saved.track);
-          if (at >= 0) {
-            state.index = at;
-            const parked = Number(saved.position) || 0;
-            state.base = parked > 0 ? parked : 0;
-          }
         }
       } catch (_) { /* fresh account */ }
     }
     state.ready = true;
-    renderNow();
     paint();
     requestAnimationFrame(() => el.app.classList.add('is-in'));
     draw();
@@ -643,6 +588,7 @@
 
   /* ------------------------------------------------------------------ */
   /* wiring                                                              */
+  el.add.addEventListener('click', addFiles);
   el.play.addEventListener('click', toggle);
   el.prev.addEventListener('click', () => step(-1));
   el.next.addEventListener('click', () => step(1));
@@ -675,7 +621,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   window.addEventListener('pagehide', save);
 
-  /* clock: position, lyrics, spectrum, listening time */
+  /* clock: position, spectrum, listening time */
   let lastFrame = 0;
   function frame(now) {
     requestAnimationFrame(frame);
@@ -691,7 +637,6 @@
       }
       lastPos = at;
       paintTransport();
-      updateLyric();
     }
     draw();
   }
@@ -702,7 +647,7 @@
   setMode('sequence', false);
   setVolume(0.8, false);
   renderQueue();
-  renderNow();
+  paint();
   draw();
   el.listen.hidden = true;
   restore();
